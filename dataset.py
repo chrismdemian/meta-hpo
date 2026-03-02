@@ -21,3 +21,17 @@ def load_data(path=DATA_PATH):
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train) # Normalize training data
     X_test = scaler.transform(X_test) # Normalize testing data from training normalization
+
+class HPODataset(Dataset):
+    def __init__(self, X, y):
+        super().__init__()
+
+        # Convert to torch tensors
+        self.X = torch.tensor(X, dtype=torch.float32)
+        self.y = torch.tensor(y.values, dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]   
