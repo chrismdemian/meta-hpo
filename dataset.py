@@ -1,0 +1,23 @@
+import pandas as pd
+import torch
+from torch.utils.data import Dataset
+from sklearn.model_selection import train_test_split # To split the dataset into train and test randomly
+from sklearn.preprocessing import StandardScaler # Normalization
+from config import DATA_PATH, TEST_SIZE, SEED
+
+def load_data(path=DATA_PATH):
+    
+    df = pd.read_csv(path)
+
+    # Remove columns we don't need
+    df = df.drop(columns=['Unnamed: 0', 'max_eval_top5', 'distributed', 'prefetcher', 'rank', 'world_size'])
+
+    X = df.drop(columns=['max_eval_top1']) # Everything the model gets to see (hyperparameters etc)
+    y = df['max_eval_top1'] # Accuracy we want it to predict
+
+    # Split into training and 20% test with reproducible results (seed = 42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE, random_state=SEED)
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train) # Normalize training data
+    X_test = scaler.transform(X_test) # Normalize testing data from training normalization
