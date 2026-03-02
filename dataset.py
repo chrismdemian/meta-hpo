@@ -22,6 +22,8 @@ def load_data(path=DATA_PATH):
     X_train = scaler.fit_transform(X_train) # Normalize training data
     X_test = scaler.transform(X_test) # Normalize testing data from training normalization
 
+    return X_train, X_test, y_train, y_test
+
 class HPODataset(Dataset):
     def __init__(self, X, y):
         super().__init__()
@@ -35,3 +37,13 @@ class HPODataset(Dataset):
 
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]   
+
+def get_datasets(path=DATA_PATH):
+    # Function to be used by other files to get the datasets
+    
+    X_train, X_test, y_train, y_test = load_data(path)
+
+    train_dataset = HPODataset(X_train, y_train)
+    test_dataset = HPODataset(X_test, y_test)
+
+    return train_dataset, test_dataset
