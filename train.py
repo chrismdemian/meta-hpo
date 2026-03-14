@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from dataset import get_datasets
 from model import HPOModel
-from config import LEARNING_RATE, BATCH_SIZE, EPOCHS
+from config import LEARNING_RATE, BATCH_SIZE, EPOCHS, LR_STEP_SIZE, LR_GAMMA
 
 # Get the datasets
 train_dataset, test_dataset = get_datasets()
@@ -17,6 +17,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = HPOModel().to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=LR_STEP_SIZE, gamma=LR_GAMMA)
 
 # Training loop
 for epoch in range(EPOCHS):
@@ -41,6 +42,8 @@ for epoch in range(EPOCHS):
 
     avg_loss = total_loss / len(train_loader)
     print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {avg_loss:.4f}")
+
+    scheduler.step()
 
 torch.save(model.state_dict(), 'checkpoints/model.pth')
 print(f"Model saved to checkpoints/model.pth")
