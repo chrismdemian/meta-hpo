@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from dataset import get_datasets
 from model import HPOModel
-from config import LEARNING_RATE, BATCH_SIZE, EPOCHS, LR_STEP_SIZE, LR_GAMMA
+from config import LEARNING_RATE, BATCH_SIZE, EPOCHS, LR_STEP_SIZE, LR_GAMMA, WEIGHT_DECAY
 
 # Get the datasets
 train_dataset, test_dataset = get_datasets()
@@ -16,7 +16,7 @@ test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = HPOModel().to(device)
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=LR_STEP_SIZE, gamma=LR_GAMMA)
 
 # Training loop

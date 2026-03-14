@@ -7,7 +7,7 @@ class HPOModel(nn.Module):
     def __init__(self):
         super().__init__()
         
-        # 3 linear layers with dropout and relu activation
+        # 3 linear layers with dropout, batch normalization, and relu activation
         self.network = nn.Sequential(
             nn.Linear(INPUT_SIZE, HIDDEN_SIZE),
             nn.ReLU(),
