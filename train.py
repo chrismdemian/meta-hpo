@@ -41,3 +41,6 @@ for epoch in range(EPOCHS):
 
     avg_loss = total_loss / len(train_loader)
     print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {avg_loss:.4f}")
+
+torch.save(model.state_dict(), 'checkpoints/model.pth')
+print(f"Model saved to checkpoints/model.pth")
