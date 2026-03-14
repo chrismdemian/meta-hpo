@@ -5,7 +5,7 @@ TEST_SIZE = 0.2
 SEED = 42
 
 # Values for model.py
-INPUT_SIZE = 85
+INPUT_SIZE = 84
 HIDDEN_SIZE = 256
 OUTPUT_SIZE = 1 # Just predicting accuracy
 DROPOUT = 0.2 # To prevent overfitting

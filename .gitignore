@@ -2,3 +2,6 @@ hpo-data/
 .ipynb_checkpoints/
 explore.ipynb
 CLAUDE.md
+.claude/
+__pycache__/
+progress_report.tex
