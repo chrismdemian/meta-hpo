@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler # Normalization
 from config import DATA_PATH, META_PATH, TEST_SIZE, SEED
 import json
 
+# Load all data for just the micro dataset
 def load_data(path=DATA_PATH):
     
     df = pd.read_csv(path)
@@ -57,6 +58,7 @@ def load_data(path=DATA_PATH):
 
     return X_train, X_test, y_train, y_test
 
+# Load all data for micro, mini, and extended datasets
 def load_all_data():
     
     # Load all three datasets
