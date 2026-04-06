@@ -6,3 +6,6 @@ CLAUDE.md
 __pycache__/
 progress_report.tex
 checkpoints/
+# Codex local instruction files
+AGENTS.md
+

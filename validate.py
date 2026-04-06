@@ -1,11 +1,11 @@
 import torch
 import numpy as np
-from dataset import get_all_datasets
+from dataset import get_hpob_datasets
 from model import HPOModel
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # Load data and model (no need for training data)
-_, test_dataset = get_all_datasets()
+_, test_dataset = get_hpob_datasets()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = HPOModel().to(device)

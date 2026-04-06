@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split # To split the dataset into
 from sklearn.preprocessing import StandardScaler # Normalization
 from config import DATA_PATH, META_PATH, TEST_SIZE, SEED
 import json
+import numpy as np
 
 # Load all data for just the micro dataset
 def load_data(path=DATA_PATH):
@@ -118,13 +119,54 @@ def load_all_data():
 
     return X_train, X_test, y_train, y_test
 
+def load_hpob_data():
+    # Load training data
+    with open('hpo-data/hpob-data/meta-train-dataset.json') as f:
+        train_data = json.load(f)
+    # Load testing data
+    with open('hpo-data/hpob-data/meta-test-dataset.json') as f:
+        test_data = json.load(f)
+
+    # Code to extract all rows
+    search_spaces = sorted(train_data.keys())
+    ss_to_idx = {ss: i for i, ss in enumerate(search_spaces)}
+    max_features = 18
+    n_search_spaces = len(search_spaces)
+    
+    def extract_rows(data):
+        X_all = []
+        y_all = []
+        for ss_id in data:
+            ss_onehot = [0] * n_search_spaces
+            if ss_id in ss_to_idx:
+                ss_onehot[ss_to_idx[ss_id]] = 1
+            n_feat = len(data[ss_id][list(data[ss_id].keys())[0]]['X'][0])
+            for ds_id in data[ss_id]:
+                for i in range(len(data[ss_id][ds_id]['y'])):
+                    x = data[ss_id][ds_id]['X'][i]
+                    # Pad to max features
+                    x_padded = x + [0.0] * (max_features - len(x))
+                    # Add search space on hot
+                    x_full = x_padded + ss_onehot
+                    X_all.append(x_full)
+                    y_all.append(data[ss_id][ds_id]['y'][i][0])
+        return np.array(X_all, dtype=np.float32), np.array(y_all, dtype=np.float32)
+
+    X_train, y_train = extract_rows(train_data)
+    X_test, y_test = extract_rows(test_data)
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+    return X_train, X_test, y_train, y_test
+
 class HPODataset(Dataset):
     def __init__(self, X, y):
         super().__init__()
 
         # Convert to torch tensors
         self.X = torch.tensor(X, dtype=torch.float32)
-        self.y = torch.tensor(y.values, dtype=torch.float32)
+        self.y = torch.tensor(y.values if hasattr(y, 'values') else y, dtype=torch.float32)
 
     def __len__(self):
         return len(self.X)
@@ -149,4 +191,10 @@ def get_all_datasets():
     train_dataset = HPODataset(X_train, y_train)
     test_dataset = HPODataset(X_test, y_test)
 
+    return train_dataset, test_dataset
+
+def get_hpob_datasets():
+    X_train, X_test, y_train, y_test = load_hpob_data()
+    train_dataset = HPODataset(X_train, y_train)
+    test_dataset = HPODataset(X_test, y_test)
     return train_dataset, test_dataset

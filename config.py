@@ -5,15 +5,15 @@ TEST_SIZE = 0.2
 SEED = 42
 
 # Values for model.py
-INPUT_SIZE = 75
+INPUT_SIZE = 34
 HIDDEN_SIZE = 256
 OUTPUT_SIZE = 1 # Just predicting accuracy
-DROPOUT = 0.3 # To prevent overfitting
+DROPOUT = 0.2 # To prevent overfitting
 
 # Values for train.py
 LEARNING_RATE = 0.001
-BATCH_SIZE = 64
-EPOCHS = 300
-LR_STEP_SIZE = 100 # Reduce learning rate every 100 epochs
-LR_GAMMA = 0.7 # Half the learning rate
+BATCH_SIZE = 256
+EPOCHS = 100
+LR_STEP_SIZE = 30 # Reduce learning rate every 100 epochs
+LR_GAMMA = 0.5 # Half the learning rate
 WEIGHT_DECAY = 1e-4
