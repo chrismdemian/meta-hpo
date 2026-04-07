@@ -12,8 +12,8 @@ DROPOUT = 0.2 # To prevent overfitting
 
 # Values for train.py
 LEARNING_RATE = 0.001
-BATCH_SIZE = 256
-EPOCHS = 100
+BATCH_SIZE = 1024
+EPOCHS = 50
 LR_STEP_SIZE = 30 # Reduce learning rate every 100 epochs
 LR_GAMMA = 0.5 # Half the learning rate
 WEIGHT_DECAY = 1e-4
