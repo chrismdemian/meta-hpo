@@ -199,3 +199,84 @@ def get_hpob_datasets():
     train_dataset = HPODataset(X_train, y_train)
     test_dataset = HPODataset(X_test, y_test)
     return train_dataset, test_dataset
+
+def load_unified_hpob_data():
+    # Load all HPO-B data across all search spaces
+    all_sources = []
+    for name in ['meta-train-dataset.json', 'meta-test-dataset.json', 'meta-validation-dataset.json']:
+        with open(f'hpo-data/hpob-data/{name}') as f:
+            all_sources.append(json.load(f))
+
+    # Get all search spaces and their feature counts
+    search_spaces = sorted(all_sources[0].keys())
+    ss_to_idx = {ss: i for i, ss in enumerate(search_spaces)}
+    ss_feat_counts = {}
+    for ss_id in search_spaces:
+        ds_id = list(all_sources[0][ss_id].keys())[0]
+        ss_feat_counts[ss_id] = len(all_sources[0][ss_id][ds_id]['X'][0])
+
+    # Collect all dataset IDs across all search spaces and splits
+    all_ds_ids = set()
+    for source in all_sources:
+        for ss_id in source:
+            all_ds_ids.update(source[ss_id].keys())
+    ds_ids = sorted(all_ds_ids)
+    ds_to_idx = {ds: i for i, ds in enumerate(ds_ids)}
+    n_datasets = len(ds_ids)
+
+    # Pad all X to max feature size (18) + add dataset one-hot + search space index
+    max_features = 18
+    X_all, y_all, ss_idx_all = [], [], []
+
+    for source in all_sources:
+        for ss_id in source:
+            ss_idx = ss_to_idx[ss_id]
+            n_feat = ss_feat_counts[ss_id]
+            for ds_id in source[ss_id]:
+                ds_onehot = [0] * n_datasets
+                ds_onehot[ds_to_idx[ds_id]] = 1
+                for i in range(len(source[ss_id][ds_id]['y'])):
+                    x = source[ss_id][ds_id]['X'][i]
+                    x_padded = x + [0.0] * (max_features - n_feat)
+                    x_full = x_padded + ds_onehot
+                    X_all.append(x_full)
+                    y_all.append(source[ss_id][ds_id]['y'][i][0])
+                    ss_idx_all.append(ss_idx)
+
+    X_all = np.array(X_all, dtype=np.float32)
+    y_all = np.array(y_all, dtype=np.float32)
+    ss_idx_all = np.array(ss_idx_all, dtype=np.int64)
+
+    # Split
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test, ss_train, ss_test = train_test_split(
+        X_all, y_all, ss_idx_all, test_size=TEST_SIZE, random_state=SEED
+    )
+
+    # Scale only the first 18 columns (hyperparameters), not the dataset one-hots
+    scaler = StandardScaler()
+    X_train[:, :max_features] = scaler.fit_transform(X_train[:, :max_features])
+    X_test[:, :max_features] = scaler.transform(X_test[:, :max_features])
+
+    return X_train, X_test, y_train, y_test, ss_train, ss_test, ss_feat_counts, search_spaces, n_datasets
+
+class UnifiedHPODataset(Dataset):
+    def __init__(self, X, y, ss_idx):
+        super().__init__()
+        self.X = torch.tensor(X, dtype=torch.float32)
+        self.y = torch.tensor(y, dtype=torch.float32)
+        self.ss_idx = torch.tensor(ss_idx, dtype=torch.long)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx], self.ss_idx[idx]
+
+def get_unified_hpob_datasets():
+    X_train, X_test, y_train, y_test, ss_train, ss_test, ss_feat_counts, search_spaces, n_datasets = load_unified_hpob_data()
+    train_dataset = UnifiedHPODataset(X_train, y_train, ss_train)
+    test_dataset = UnifiedHPODataset(X_test, y_test, ss_test)
+    # Return info the model needs to build per-search-space input layers
+    ss_info = {ss_to_idx: ss_feat_counts[ss] for ss_to_idx, ss in enumerate(search_spaces)}
+    return train_dataset, test_dataset, ss_info, n_datasets
