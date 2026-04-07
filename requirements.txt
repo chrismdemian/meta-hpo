@@ -2,3 +2,5 @@ pandas
 torch
 scikit-learn
 scipy
+numpy
+huggingface_hub
