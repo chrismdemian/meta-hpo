@@ -119,41 +119,42 @@ def load_all_data():
 
     return X_train, X_test, y_train, y_test
 
-def load_hpob_data():
-    # Load training data
+def load_hpob_data(search_space='6767'):
+    # Load all HPO-B data for this search space
     with open('hpo-data/hpob-data/meta-train-dataset.json') as f:
         train_data = json.load(f)
-    # Load testing data
     with open('hpo-data/hpob-data/meta-test-dataset.json') as f:
         test_data = json.load(f)
+    with open('hpo-data/hpob-data/meta-validation-dataset.json') as f:
+        val_data = json.load(f)
 
-    # Code to extract all rows
-    search_spaces = sorted(train_data.keys())
-    ss_to_idx = {ss: i for i, ss in enumerate(search_spaces)}
-    max_features = 18
-    n_search_spaces = len(search_spaces)
-    
-    def extract_rows(data):
-        X_all = []
-        y_all = []
-        for ss_id in data:
-            ss_onehot = [0] * n_search_spaces
-            if ss_id in ss_to_idx:
-                ss_onehot[ss_to_idx[ss_id]] = 1
-            n_feat = len(data[ss_id][list(data[ss_id].keys())[0]]['X'][0])
-            for ds_id in data[ss_id]:
-                for i in range(len(data[ss_id][ds_id]['y'])):
-                    x = data[ss_id][ds_id]['X'][i]
-                    # Pad to max features
-                    x_padded = x + [0.0] * (max_features - len(x))
-                    # Add search space on hot
-                    x_full = x_padded + ss_onehot
-                    X_all.append(x_full)
-                    y_all.append(data[ss_id][ds_id]['y'][i][0])
-        return np.array(X_all, dtype=np.float32), np.array(y_all, dtype=np.float32)
+    # Combine all splits to get maximum data, then do our own 80/20 split
+    all_sources = [train_data, test_data, val_data]
 
-    X_train, y_train = extract_rows(train_data)
-    X_test, y_test = extract_rows(test_data)
+    # Collect all dataset IDs across all splits for one-hot encoding
+    all_ds_ids = set()
+    for source in all_sources:
+        if search_space in source:
+            all_ds_ids.update(source[search_space].keys())
+    ds_ids = sorted(all_ds_ids)
+    ds_to_idx = {ds: i for i, ds in enumerate(ds_ids)}
+
+    # Extract rows with dataset ID one-hot features
+    X_all, y_all = [], []
+    for source in all_sources:
+        if search_space in source:
+            for ds_id in source[search_space]:
+                ds_onehot = [0] * len(ds_ids)
+                ds_onehot[ds_to_idx[ds_id]] = 1
+                for i in range(len(source[search_space][ds_id]['y'])):
+                    x = source[search_space][ds_id]['X'][i] + ds_onehot
+                    X_all.append(x)
+                    y_all.append(source[search_space][ds_id]['y'][i][0])
+
+    X_all = np.array(X_all, dtype=np.float32)
+    y_all = np.array(y_all, dtype=np.float32)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=TEST_SIZE, random_state=SEED)
 
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
